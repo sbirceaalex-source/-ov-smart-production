@@ -252,20 +252,60 @@ function renderOverview(){
   const prio200=state.orders.filter(o=>+o.prio===200).length;
   const totalT=state.orders.reduce((a,o)=>a+orderTotalWeight(o),0)/1000;
   const pool=state.staff.ovCount+state.staff.springers+state.staff.montage+state.staff.weld+state.staff.wood;
+
   $('overviewMetrics').innerHTML=`
     <div class="card metric">Aufträge<strong>${state.orders.length}</strong></div>
     <div class="card metric">PRIO 200<strong>${prio200}</strong></div>
     <div class="card metric">Gesamtgewicht<strong>${totalT.toFixed(1)} t</strong></div>
     <div class="card metric">Personal-Pool<strong>${pool}</strong></div>`;
+
   $('overviewLines').innerHTML=rankedLines().map(line=>{
     const arr=lineOrders(line), o=arr[0], sc=lineScore(line);
-    return `<div class="card pad ${sc>=70?'bad':sc>=50?'warn':'ok'}"><div class="row"><h3>${line}</h3><span class="badge">Score ${sc}</span></div>
+    return `<div class="card pad ${sc>=70?'bad':sc>=50?'warn':'ok'}">
+      <div class="row">
+        <h3>${line}</h3>
+        <span class="badge">Score ${sc}</span>
+      </div>
       <div class="small">Speed ${state.lines[line].speed} · ${state.lines[line].hangers} Gehänge · ${state.lines[line].cycleMinutes||60} Min/Umlauf</div>
       <div class="row"><span>Aktueller Auftrag</span><b>${o?o.num:'-'}</b></div>
-      <div class="row"><span>PRIO</span><b>${o?o.prio+' · '+prioText(o.prio):'-'}</b></div></div>`;
+      <div class="row"><span>PRIO</span><b>${o?o.prio+' · '+prioText(o.prio):'-'}</b></div>
+    </div>`;
   }).join('');
+
+  $('engpassForecast').innerHTML=rankedLines().map(line=>{
+    const arr=lineOrders(line);
+    const o=arr[0];
+    const sc=lineScore(line);
+    const delay=line==='ESTA 2'?80:line==='ESTA 4'?90:60;
+
+    let status='STABIL';
+    let cls='ok';
+    let text='Kein akuter Engpass erkennbar.';
+
+    if(o && sc>=70){
+      status='ENGPASS-RISIKO';
+      cls='bad';
+      text=`Erhöhtes Risiko in ca. ${delay} Min.`;
+    }else if(o && sc>=50){
+      status='BEOBACHTEN';
+      cls='warn';
+      text=`Linie in den nächsten ca. ${delay} Min beobachten.`;
+    }
+
+    return `<div class="card pad ${cls}">
+      <div class="row">
+        <h3>${line}</h3>
+        <span class="${status==='ENGPASS-RISIKO'?'badT':status==='BEOBACHTEN'?'amber':'good'}">${status}</span>
+      </div>
+      <div class="small">${text}</div>
+      <div class="row"><span>Nächster Auftrag</span><b>${o?o.num:'-'}</b></div>
+      <div class="row"><span>Vorlauf bis Abnehmen</span><b>ca. ${delay} Min</b></div>
+    </div>`;
+  }).join('');
+
   const top=rankedLines()[0];
-  $('overviewAdvice').innerHTML=`<strong>${top} zuerst absichern</strong><div>Aktuell höchste operative Priorität mit Score ${lineScore(top)}. Personal und Material zuerst dort sicherstellen.</div>`;
+  $('overviewAdvice').innerHTML=`<strong>${top} zuerst absichern</strong>
+    <div>Aktuell höchste operative Priorität mit Score ${lineScore(top)}. Personal und Material zuerst dort sicherstellen.</div>`;
 }
 function renderOrders(){
   $('orderList').innerHTML=[...state.orders].sort((a,b)=>prioWeight(b.prio)-prioWeight(a.prio)||a.id-b.id).map((o,i)=>`
