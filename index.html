@@ -1,0 +1,372 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#173b61">
+<title>OV Smart Production V22</title>
+<style>
+:root{
+  --nav:#173b61;--bg:#eef4f8;--card:#fff;--txt:#19324c;--mut:#708196;
+  --blue:#3f7fda;--green:#24b963;--red:#e64a55;--amber:#e7a326;--border:#d7e4ee;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;color:var(--txt)}
+header{background:var(--nav);color:#fff;padding:16px 18px;position:sticky;top:0;z-index:20}
+.head{max-width:1100px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.brand{font-size:22px;font-weight:900}.brand small{display:block;color:#5bd2ff;font-size:11px;letter-spacing:2px}.title{font-size:18px;font-weight:900}
+main{max-width:1100px;margin:auto;padding:14px}
+.tabs{display:flex;gap:8px;overflow-x:auto;padding:2px 0 12px}.tab{border:0;border-radius:999px;background:#dfe9f1;color:var(--txt);font-weight:900;padding:11px 16px;white-space:nowrap}.tab.active{background:var(--blue);color:#fff}
+.view{display:none}.view.active{display:block}
+.card{background:var(--card);border:1px solid var(--border);border-radius:18px;box-shadow:0 4px 18px rgba(20,48,73,.06)}.pad{padding:16px}
+h2{font-size:22px;margin:16px 0 10px}h3{margin:0;font-size:20px}
+.info{background:#edf7ff;border:1px solid #c8e5fb;border-radius:18px;padding:16px}.info strong{display:block;font-size:22px;color:var(--blue);margin-bottom:8px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.metric{padding:14px}.metric b{display:block;font-size:25px;margin-top:4px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.form{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+label{font-size:12px;font-weight:900;color:var(--mut)}
+input,select{width:100%;padding:11px;border:1px solid #c8d7e4;border-radius:11px;background:#fff;font-size:16px;margin-top:5px}
+.btn{border:0;border-radius:11px;padding:11px 14px;background:var(--blue);color:#fff;font-weight:900}
+.row{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:9px 0;border-bottom:1px solid #edf2f6}.row:last-child{border:0}
+.small{font-size:12px;color:var(--mut);line-height:1.5}.badge{display:inline-block;padding:5px 9px;border-radius:999px;background:#e8eff5;font-size:11px;font-weight:900}
+.ok{background:#ebf8f0;border-color:#c7ebd4}.bad{background:#fff1f2;border-color:#ffcbd0}.warn{background:#fff9eb;border-color:#f3dfad}
+.good{color:var(--green);font-weight:900}.badT{color:var(--red);font-weight:900}.amber{color:#c88300;font-weight:900}.blueT{color:var(--blue);font-weight:900}
+.linegrid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:10px}.station{padding:11px;background:#f5f8fb;border-radius:13px;text-align:center}.station b{display:block;font-size:22px}
+.scorebar{height:12px;background:#e4edf4;border-radius:999px;overflow:hidden;margin:10px 0}.scorebar span{display:block;height:100%;background:var(--blue)}
+.order{margin-top:10px}.assign{padding:10px 0;border-bottom:1px solid #dbe9f4}.assign:last-child{border:0}
+footer{text-align:center;color:#76889a;font-size:11px;padding:22px}
+@media(max-width:820px){.grid4,.grid3,.form{grid-template-columns:1fr}.title{font-size:15px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="head">
+    <div class="brand">StoreBest<small>LÜBECK</small></div>
+    <div class="title">OV Smart Production V22</div>
+    <div id="clock" style="font-size:12px;font-weight:800"></div>
+  </div>
+</header>
+
+<main>
+<div class="tabs">
+  <button class="tab active" data-view="overview">Übersicht</button>
+  <button class="tab" data-view="orders">Aufträge</button>
+  <button class="tab" data-view="prodplan">Produktionsplan</button>
+  <button class="tab" data-view="flow">Materialfluss</button>
+<button class="tab" data-view="score">Produktions-Score</button>
+  <button class="tab" data-view="rules">Linienregeln</button>
+  <button class="tab" data-view="staff">Mitarbeiterplan</button>
+  <button class="tab" data-view="help">Abteilungen</button>
+</div>
+
+<section id="overview" class="view active">
+  <h2>Übersicht</h2>
+  <div id="overviewMetrics" class="grid4"></div>
+  <div id="overviewLines" class="grid3" style="margin-top:10px"></div>
+  <h2>Assistent</h2>
+  <div id="overviewAdvice" class="card pad info"></div>
+</section>
+
+<section id="orders" class="view">
+  <h2>Aufträge & PRIO</h2>
+  <div class="card pad">
+    <div class="small" style="margin-bottom:10px">200 = Heute · 201 = Morgen · 202 = Übermorgen · 203 = in 3 Tagen · 999 = Keine Priorität</div>
+    <div class="form">
+      <label>Auftrag<input id="oNum" placeholder="z. B. 200-5000"></label>
+      <label>PRIO<select id="oPrio"><option>200</option><option>201</option><option>202</option><option>203</option><option>999</option></select></label>
+      <label>Linie<select id="oLine"><option>ESTA 2</option><option>ESTA 4</option><option>HP</option></select></label>
+      <label>Teile<input id="oParts" type="number" min="0"></label>
+      <label>Gewicht/Teil kg<input id="oWeight" type="number" step="0.1" min="0"></label>
+      <label>Länge mm<input id="oLength" type="number" min="0"></label>
+      <label>Breite mm<input id="oWidth" type="number" min="0"></label>
+      <label>Höhe mm<input id="oHeight" type="number" min="0"></label>
+      <label>Produkt<input id="oProduct" placeholder="z. B. Regalträger"></label>
+    </div>
+    <button class="btn" id="addOrderBtn" style="margin-top:10px">Auftrag hinzufügen</button>
+  </div>
+  <div id="orderList"></div>
+</section>
+
+<section id="prodplan" class="view">
+  <h2>Smart Produktionsplan</h2>
+  <div class="info"><strong>Automatische Reihenfolge nach PRIO</strong><div class="small">Innerhalb jeder Linie: PRIO 200 → 201 → 202 → 203 → 999. Die Materialabmessungen und Gehänge-Regel werden zusätzlich berücksichtigt.</div></div>
+  <div id="productionPlan"></div>
+  <h2>Schicht-Zeitplan</h2>
+  <div id="timelinePlan"></div>
+</section>
+
+<section id="flow" class="view">
+<h2>Materialfluss · Aufhängen → Abnehmen</h2>
+<div class="info"><strong>Kontinuierlicher Materialfluss</strong><div class="small">Aufhängen: 05:00–13:00 · 13:00–21:00 · 21:00–05:00. Abnehmen: 06:00–14:00 · 14:00–22:00 · 22:00–06:00. Teile kommen laufend an, nicht als kompletter Auftrag auf einmal.</div></div>
+<div id="flowCards"></div><h2>Schichtübergaben</h2><div id="handoverCards"></div></section>
+<section id="score" class="view">
+  <h2>Produktions-Score</h2>
+  <div class="info"><strong>Welche Linie braucht jetzt die höchste Aufmerksamkeit?</strong><div class="small">Score aus PRIO, Auftragsgewicht, Personalbedarf und Material-/Gehängebelastung.</div></div>
+  <div id="scoreList"></div>
+</section>
+
+<section id="rules" class="view">
+  <h2>Linienregeln & Gehänge</h2>
+  <div class="info"><strong>Materialbreite steuert den Gehänge-Abstand</strong><div class="small">Bis 65 cm Breite: 1 Gehänge pro Teil. Über 65 cm: zwischen zwei Teilen bleibt 1 Gehänge frei → Bedarf = 2 × Teile − 1.</div></div>
+
+  <div class="card pad" style="margin-top:10px">
+    <div class="row"><h3>ESTA 2</h3><span class="badge">625 Gehänge · Speed 7</span></div>
+    <div class="form"><label>Max. Material-Länge mm<input id="rE2L" type="number" min="0"></label><label>Max. Material-Breite mm<input id="rE2B" type="number" min="0"></label></div>
+  </div>
+  <div class="card pad" style="margin-top:10px">
+    <div class="row"><h3>ESTA 4</h3><span class="badge">470 Gehänge · Speed 5</span></div>
+    <div class="form"><label>Max. Material-Länge mm<input id="rE4L" type="number" min="0"></label><label>Max. Material-Breite mm<input id="rE4B" type="number" min="0"></label></div>
+  </div>
+  <div class="card pad" style="margin-top:10px">
+    <div class="row"><h3>HP</h3><span class="badge">252 Gehänge · Speed 3.5</span></div>
+    <div class="form"><label>Max. Material-Länge mm<input id="rHPL" type="number" min="0"></label><label>Max. Material-Breite mm<input id="rHPB" type="number" min="0"></label></div>
+  </div>
+
+  <div class="card pad" style="margin-top:10px">
+    <h3>Gehänge-Rechner</h3>
+    <div class="form">
+      <label>Teile<input id="cParts" type="number" min="1"></label>
+      <label>Material-Breite mm<input id="cWidth" type="number" min="0"></label>
+      <label>Linie<select id="cLine"><option>ESTA 2</option><option>ESTA 4</option><option>HP</option></select></label>
+    </div>
+    <button class="btn" id="calcBtn" style="margin-top:10px">Berechnen</button>
+    <div id="calcResult" class="info" style="margin-top:10px">Werte eingeben.</div>
+  </div>
+
+  <h2>Kompatibilitätsprüfung</h2>
+  <div id="compatibilityList"></div>
+</section>
+
+<section id="staff" class="view">
+  <h2>Mitarbeiterplanung</h2>
+  <div class="info"><strong>Digitale Schichttafel</strong><div class="small">Die App verteilt den verfügbaren Personal-Pool nur auf vollständig besetzbare Linien.</div></div>
+  <div class="card pad" style="margin-top:10px">
+    <div class="form">
+      <label>Schicht<select id="shift"><option>Frühschicht</option><option>Spätschicht</option><option>Nachtschicht</option></select></label>
+      <label>OV-Mitarbeiter anwesend<input id="ovCount" type="number" min="0"></label>
+      <label>OV-Springer<input id="springers" type="number" min="0"></label>
+      <label>Abwesend gesamt<input id="absent" type="number" min="0"></label>
+    </div>
+  </div>
+  <h2>Besetzungsplan</h2>
+  <div id="staffPlan"></div>
+  <h2>Assistenten-Empfehlung</h2>
+  <div id="staffAdvice" class="card pad info"></div>
+</section>
+
+<section id="help" class="view">
+  <h2>Hilfe aus anderen Abteilungen</h2>
+  <div class="card pad">
+    <div class="form">
+      <label>Montage verfügbar<input id="montage" type="number" min="0"></label>
+      <label>Schweißerei verfügbar<input id="weld" type="number" min="0"></label>
+      <label>Holz verfügbar<input id="wood" type="number" min="0"></label>
+      <label>Schichtleiter HP<select id="shiftLeader"><option value="ja">Ja</option><option value="nein">Nein</option></select></label>
+    </div>
+  </div>
+  <div id="helpSummary"></div>
+</section>
+
+<footer>OV Smart Production V22 · stabiler Neuaufbau · lokale Demo-Daten auf diesem Gerät</footer>
+</main>
+
+<script>
+(function(){
+'use strict';
+
+const DEFAULT = {
+  lines:{
+    'ESTA 2':{speed:7,hangers:625,cycleMinutes:85,crew:{hang:3,take:3,pack:1}},
+    'ESTA 4':{speed:5,hangers:470,cycleMinutes:90,crew:{hang:4,take:4,pack:1}},
+    'HP':{speed:3.5,hangers:252,cycleMinutes:60,crew:{hang:2,take:2,pack:1}}
+  },
+  rules:{
+    'ESTA 2':{maxL:'',maxB:''},
+    'ESTA 4':{maxL:'',maxB:''},
+    'HP':{maxL:'',maxB:''}
+  },
+  orders:[
+    {id:1,num:'200-3261',prio:200,line:'ESTA 4',parts:1850,weight:7.4,l:800,b:420,h:30,product:'Regalträger'},
+    {id:2,num:'200-1784',prio:200,line:'HP',parts:1500,weight:5.5,l:0,b:0,h:0,product:'Bauteil'},
+    {id:3,num:'201-4587',prio:201,line:'ESTA 2',parts:1200,weight:4.2,l:0,b:0,h:0,product:'Bauteil'}
+  ],
+  staff:{shift:'Frühschicht',ovCount:21,springers:0,absent:0,montage:0,weld:0,wood:0,shiftLeader:'ja'}
+};
+
+let state;
+try{
+  state=JSON.parse(localStorage.getItem('ovV22')||'null')||DEFAULT;
+}catch(e){state=DEFAULT}
+state.lines=state.lines||DEFAULT.lines;
+Object.keys(DEFAULT.lines).forEach(line=>{state.lines[line]=Object.assign({},DEFAULT.lines[line],state.lines[line]||{}); if(!state.lines[line].cycleMinutes) state.lines[line].cycleMinutes=DEFAULT.lines[line].cycleMinutes;});
+state.rules=state.rules||DEFAULT.rules;
+state.orders=state.orders||DEFAULT.orders;
+state.staff=Object.assign({},DEFAULT.staff,state.staff||{});
+
+const $=id=>document.getElementById(id);
+function save(){try{localStorage.setItem('ovV22',JSON.stringify(state))}catch(e){}}
+function prioText(p){p=+p;return p===200?'Heute':p===201?'Morgen':p===202?'Übermorgen':p===203?'in 3 Tagen':'Keine Priorität'}
+function prioWeight(p){p=+p;return p===200?100:p===201?70:p===202?45:p===203?25:5}
+function hangerNeed(parts,width){parts=Math.max(0,Math.floor(+parts||0));width=+width||0;if(!parts)return 0;return width>650?2*parts-1:parts}
+function shiftStart(){return state.staff.shift==='Frühschicht'?5:state.staff.shift==='Spätschicht'?13:21}
+function fmtTime(decimal){decimal=((decimal%24)+24)%24;const h=Math.floor(decimal),m=Math.round((decimal-h)*60);return String((h+(m===60?1:0))%24).padStart(2,'0')+':'+String(m===60?0:m).padStart(2,'0')}
+function cycleHours(line){return (+state.lines[line].cycleMinutes||60)/60}
+function orderHours(o,line){const need=hangerNeed(o.parts,o.b), rounds=Math.ceil(need/state.lines[line].hangers)||0;return rounds*cycleHours(line)}
+function crewTotal(line){const c=state.lines[line].crew;return c.hang+c.take+c.pack}
+function orderTotalWeight(o){return (+o.parts||0)*(+o.weight||0)}
+function compatible(o,line){
+  const r=state.rules[line];
+  if(!o.l||!o.b)return {state:'unknown',text:'Maße fehlen'};
+  if(!r.maxL||!r.maxB)return {state:'unknown',text:'Grenzwerte fehlen'};
+  if(+o.l<=+r.maxL && +o.b<=+r.maxB)return {state:'yes',text:'geeignet'};
+  return {state:'no',text:'nicht geeignet'};
+}
+function lineOrders(line){return state.orders.filter(o=>o.line===line).sort((a,b)=>prioWeight(b.prio)-prioWeight(a.prio)||a.id-b.id)}
+function lineScore(line){
+  const arr=lineOrders(line); if(!arr.length)return 0;
+  const first=arr[0];
+  const pr=prioWeight(first.prio);
+  const tons=Math.min(20,orderTotalWeight(first)/1000);
+  const crew=Math.min(15,crewTotal(line)*1.6);
+  const hneed=hangerNeed(first.parts,first.b);
+  const rounds=Math.ceil(hneed/state.lines[line].hangers)||0;
+  const load=Math.min(20,rounds*6);
+  return Math.min(100,Math.round(pr*.55+tons+crew+load));
+}
+function rankedLines(){return Object.keys(state.lines).sort((a,b)=>lineScore(b)-lineScore(a))}
+function renderTabs(){
+  document.querySelectorAll('.tab').forEach(btn=>{
+    btn.onclick=()=>{
+      document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+      document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
+      btn.classList.add('active'); $(btn.dataset.view).classList.add('active');
+    };
+  });
+}
+function renderOverview(){
+  const prio200=state.orders.filter(o=>+o.prio===200).length;
+  const totalT=state.orders.reduce((a,o)=>a+orderTotalWeight(o),0)/1000;
+  const pool=state.staff.ovCount+state.staff.springers+state.staff.montage+state.staff.weld+state.staff.wood;
+  $('overviewMetrics').innerHTML=`
+    <div class="card metric">Aufträge<strong>${state.orders.length}</strong></div>
+    <div class="card metric">PRIO 200<strong>${prio200}</strong></div>
+    <div class="card metric">Gesamtgewicht<strong>${totalT.toFixed(1)} t</strong></div>
+    <div class="card metric">Personal-Pool<strong>${pool}</strong></div>`;
+  $('overviewLines').innerHTML=rankedLines().map(line=>{
+    const arr=lineOrders(line), o=arr[0], sc=lineScore(line);
+    return `<div class="card pad ${sc>=70?'bad':sc>=50?'warn':'ok'}"><div class="row"><h3>${line}</h3><span class="badge">Score ${sc}</span></div>
+      <div class="small">Speed ${state.lines[line].speed} · ${state.lines[line].hangers} Gehänge · ${state.lines[line].cycleMinutes||60} Min/Umlauf</div>
+      <div class="row"><span>Aktueller Auftrag</span><b>${o?o.num:'-'}</b></div>
+      <div class="row"><span>PRIO</span><b>${o?o.prio+' · '+prioText(o.prio):'-'}</b></div></div>`;
+  }).join('');
+  const top=rankedLines()[0];
+  $('overviewAdvice').innerHTML=`<strong>${top} zuerst absichern</strong><div>Aktuell höchste operative Priorität mit Score ${lineScore(top)}. Personal und Material zuerst dort sicherstellen.</div>`;
+}
+function renderOrders(){
+  $('orderList').innerHTML=[...state.orders].sort((a,b)=>prioWeight(b.prio)-prioWeight(a.prio)||a.id-b.id).map((o,i)=>`
+    <div class="card pad order ${+o.prio===200?'bad':''}">
+      <div class="row"><div><h3>#${i+1} · ${o.num}</h3><div class="small">${o.line} · ${o.product}</div></div><span class="badge">PRIO ${o.prio} · ${prioText(o.prio)}</span></div>
+      <div class="small">${o.parts.toLocaleString('de-DE')} Teile · ${o.weight} kg/Teil · ${(orderTotalWeight(o)/1000).toFixed(2)} t · ${o.l||'-'}×${o.b||'-'}×${o.h||'-'} mm</div>
+      <div class="small">Gehänge-Bedarf: <b>${hangerNeed(o.parts,o.b).toLocaleString('de-DE')}</b></div>
+      <button class="btn" style="margin-top:9px;background:#7c8d9c" onclick="window.deleteOrder(${o.id})">Löschen</button>
+    </div>`).join('');
+}
+window.deleteOrder=id=>{state.orders=state.orders.filter(o=>o.id!==id);save();renderAll()}
+function addOrder(){
+  const num=$('oNum').value.trim(); if(!num)return;
+  state.orders.push({id:Date.now(),num,prio:+$('oPrio').value,line:$('oLine').value,parts:+$('oParts').value||0,weight:+$('oWeight').value||0,l:+$('oLength').value||0,b:+$('oWidth').value||0,h:+$('oHeight').value||0,product:$('oProduct').value.trim()||'-'});
+  ['oNum','oParts','oWeight','oLength','oWidth','oHeight','oProduct'].forEach(id=>$(id).value='');
+  save();renderAll();
+}
+function renderProductionPlan(){
+  $('productionPlan').innerHTML=Object.keys(state.lines).map(line=>{
+    const arr=lineOrders(line);
+    return `<div class="card pad" style="margin-top:10px"><div class="row"><div><h3>${line}</h3><div class="small">Standardgeschwindigkeit ${state.lines[line].speed} · ${state.lines[line].hangers} Gehänge · ${state.lines[line].cycleMinutes||60} Min/Umlauf</div></div><span class="badge">${arr.length} Auftrag${arr.length===1?'':'e'}</span></div>
+      ${arr.length?arr.map((o,i)=>{
+        const need=hangerNeed(o.parts,o.b), rounds=Math.ceil(need/state.lines[line].hangers)||0, comp=compatible(o,line);
+        return `<div class="assign"><b>${i===0?'JETZT':'DANACH'} · ${o.num}</b><br><span class="small">PRIO ${o.prio} · ${prioText(o.prio)} · ${o.parts} Teile · Gehänge ${need} · ${rounds} Umlauf${rounds===1?'':'e'} · Maßstatus: ${comp.text}</span></div>`;
+      }).join(''):'<div class="small">Keine Aufträge.</div>'}
+    </div>`;
+  }).join('');
+}
+function renderTimeline(){
+  const start=shiftStart();
+  $('timelinePlan').innerHTML=Object.keys(state.lines).map(line=>{
+    let t=start; const arr=lineOrders(line);
+    const rows=arr.map((o,i)=>{const hrs=orderHours(o,line),from=t,to=t+hrs;t=to;return `<div class="assign"><b>${fmtTime(from)} → ${fmtTime(to)} · ${o.num}</b><br><span class="small">${o.product} · PRIO ${o.prio} (${prioText(o.prio)}) · ${Math.ceil(hangerNeed(o.parts,o.b)/state.lines[line].hangers)||0} Umläufe · ca. ${hrs.toFixed(2)} h · ${crewTotal(line)} MA</span></div>`}).join('');
+    return `<div class="card pad" style="margin-top:10px"><div class="row"><h3>${line}</h3><span class="badge">Start ${fmtTime(start)}</span></div>${rows||'<div class="small">Keine Aufträge.</div>'}<div class="row"><span>Voraussichtliches Linienende</span><b>${arr.length?fmtTime(t):'-'}</b></div></div>`
+  }).join('');
+}
+function renderScore(){
+  $('scoreList').innerHTML=rankedLines().map((line,i)=>{
+    const s=lineScore(line), o=lineOrders(line)[0];
+    return `<div class="card pad ${i===0?'bad':''}" style="margin-top:10px">
+      <div class="row"><div><h3>#${i+1} ${line}</h3><div class="small">${o?'Aktueller Auftrag '+o.num:'Kein Auftrag'}</div></div><div class="blueT" style="font-size:32px">${s}</div></div>
+      <div class="scorebar"><span style="width:${s}%"></span></div>
+      <div class="small">PRIO: ${o?o.prio+' ('+prioText(o.prio)+')':'-'} · Mindestbesetzung ${crewTotal(line)} · ${state.lines[line].hangers} Gehänge</div>
+      ${i===0?'<p class="badT">Höchste operative Priorität – Personal und Material hier zuerst absichern.</p>':''}
+    </div>`;
+  }).join('');
+}
+function renderRules(){
+  const map={rE2L:['ESTA 2','maxL'],rE2B:['ESTA 2','maxB'],rE4L:['ESTA 4','maxL'],rE4B:['ESTA 4','maxB'],rHPL:['HP','maxL'],rHPB:['HP','maxB']};
+  Object.entries(map).forEach(([id,[line,key]])=>{if(document.activeElement!==$(id))$(id).value=state.rules[line][key]||''});
+  $('compatibilityList').innerHTML=state.orders.map(o=>`
+    <div class="card pad order"><div class="row"><div><b>${o.num}</b><div class="small">${o.product} · ${o.l||'?'}×${o.b||'?'} mm</div></div><span class="badge">PRIO ${o.prio}</span></div>
+    ${Object.keys(state.lines).map(line=>{const c=compatible(o,line);return `<div class="row"><span>${line}</span><span class="${c.state==='yes'?'good':c.state==='no'?'badT':'small'}">${c.state==='yes'?'✓ ':c.state==='no'?'✕ ':'? '}${c.text}</span></div>`}).join('')}
+    </div>`).join('');
+}
+function renderStaff(){
+  $('shift').value=state.staff.shift;$('ovCount').value=state.staff.ovCount;$('springers').value=state.staff.springers;$('absent').value=state.staff.absent;
+  const total=state.staff.ovCount+state.staff.springers+state.staff.montage+state.staff.weld+state.staff.wood;
+  let left=total; const order=rankedLines(); const plan={};
+  order.forEach(line=>{const need=crewTotal(line);if(left>=need){plan[line]=true;left-=need}else plan[line]=false});
+  $('staffPlan').innerHTML=order.map(line=>{
+    const c=state.lines[line].crew, active=plan[line];
+    return `<div class="card pad ${active?'ok':'bad'}" style="margin-top:10px"><div class="row"><h3>${line}</h3><span class="${active?'good':'badT'}">${active?'VOLL BESETZT':'NICHT STARTEN'}</span></div>
+      ${active?`<div class="linegrid"><div class="station">Aufhängen<b>${c.hang}/${c.hang}</b></div><div class="station">Abnehmen<b>${c.take}/${c.take}</b></div><div class="station">Packer<b>${c.pack}/${c.pack}</b></div></div>`:`<div class="badT">Mindestens ${crewTotal(line)} Mitarbeiter erforderlich.</div>`}
+    </div>`;
+  }).join('');
+  const stopped=order.filter(l=>!plan[l]);
+  $('staffAdvice').innerHTML=`<strong>${order.filter(l=>plan[l]).length}/3 Linien voll besetzbar</strong><div>Personal-Pool ${total} · Reserve ${left}. ${stopped.length?'Nicht starten: '+stopped.join(', '):'Alle Linien können laufen.'}</div>`;
+}
+function renderHelp(){
+  $('montage').value=state.staff.montage;$('weld').value=state.staff.weld;$('wood').value=state.staff.wood;$('shiftLeader').value=state.staff.shiftLeader;
+  const ext=state.staff.montage+state.staff.weld+state.staff.wood;
+  $('helpSummary').innerHTML=`<div class="card pad" style="margin-top:10px"><div class="row"><h3>Externe Hilfe verfügbar</h3><span class="badge">${ext}</span></div>
+    <div class="row"><span>Montage</span><b>${state.staff.montage}</b></div><div class="row"><span>Schweißerei</span><b>${state.staff.weld}</b></div><div class="row"><span>Holz</span><b>${state.staff.wood}</b></div>
+    <div class="small">HP-Betreuung: ${state.staff.shiftLeader==='ja'?'Schichtleiter verfügbar':'durch ESTA-Bandführer organisatorisch prüfen'}</div></div>`;
+}
+
+const FLOW_DELAY={'ESTA 2':80,'ESTA 4':90,'HP':60};
+function ftime(m){m=((m%1440)+1440)%1440;return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0')}
+function renderFlow(){
+ const a=document.getElementById('flowCards'),b=document.getElementById('handoverCards');if(!a||!b)return;
+ const lines=['ESTA 2','ESTA 4','HP'];
+ a.innerHTML=lines.map(line=>{const d=FLOW_DELAY[line];return `<div class="card pad" style="margin-top:10px"><div class="row"><h3>${line}</h3><span class="badge">ca. ${d} min</span></div>
+ <div class="row"><span>Aufhängen ab 05:00</span><b>erste Teile ca. ${ftime(300+d)}</b></div>
+ <div class="row"><span>Aufhängen ab 13:00</span><b>erste Teile ca. ${ftime(780+d)}</b></div>
+ <div class="row"><span>Aufhängen ab 21:00</span><b>erste Teile ca. ${ftime(1260+d)}</b></div>
+ <div class="small">Jedes später aufgehängte Teil kommt entsprechend später am Abnehmen an. Der Auftrag wird als kontinuierlicher Fluss behandelt.</div></div>`}).join('');
+ b.innerHTML=lines.map(line=>{const d=FLOW_DELAY[line];return `<div class="card pad" style="margin-top:10px"><div class="row"><h3>${line}</h3><span class="badge">${d} min Versatz</span></div>
+ <div class="row"><span>Letzte Teile vor 13:00</span><b>bis ca. ${ftime(780+d)}</b></div>
+ <div class="row"><span>Letzte Teile vor 21:00</span><b>bis ca. ${ftime(1260+d)}</b></div>
+ <div class="row"><span>Letzte Teile vor 05:00</span><b>bis ca. ${ftime(300+d)}</b></div></div>`}).join('');
+}
+function renderAll(){renderFlow();renderOverview();renderOrders();renderProductionPlan();renderTimeline();renderScore();renderRules();renderStaff();renderHelp()}
+function bind(){
+  renderTabs(); $('addOrderBtn').onclick=addOrder; $('calcBtn').onclick=()=>{
+    const parts=+$('cParts').value||0,width=+$('cWidth').value||0,line=$('cLine').value,need=hangerNeed(parts,width),cap=state.lines[line].hangers,rounds=need?Math.ceil(need/cap):0;
+    $('calcResult').innerHTML=`<strong>${line}</strong><div>${parts} Teile · ${width} mm breit → <b>${need}</b> Gehänge-Positionen · <b>${rounds}</b> Umlauf${rounds===1?'':'e'}.</div>`;
+  };
+  const ruleMap={rE2L:['ESTA 2','maxL'],rE2B:['ESTA 2','maxB'],rE4L:['ESTA 4','maxL'],rE4B:['ESTA 4','maxB'],rHPL:['HP','maxL'],rHPB:['HP','maxB']};
+  Object.entries(ruleMap).forEach(([id,[line,key]])=>$(id).addEventListener('input',e=>{state.rules[line][key]=e.target.value;save();renderRules();renderProductionPlan()}));
+  const staffBind={shift:['shift','str'],ovCount:['ovCount','num'],springers:['springers','num'],absent:['absent','num'],montage:['montage','num'],weld:['weld','num'],wood:['wood','num'],shiftLeader:['shiftLeader','str']};
+  Object.entries(staffBind).forEach(([key,[id,type]])=>$(id).addEventListener('input',e=>{state.staff[key]=type==='num'?(+e.target.value||0):e.target.value;save();renderStaff();renderHelp();renderOverview()}));
+  $('shiftLeader').addEventListener('change',e=>{state.staff.shiftLeader=e.target.value;save();renderHelp()});
+}
+function tick(){$('clock').textContent=new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})}
+bind();renderAll();tick();setInterval(tick,30000);
+})();
+</script>
+</body></html>
